@@ -10,7 +10,6 @@ export class TreeView implements ComponentFramework.StandardControl<IInputs, IOu
   private _container!: HTMLDivElement;
   private _treeData: ITreeItem[] = [];
   private _selectedKeys: string = "";
-  private _selectedState: string = "";
   private _changedRows: string = "";
 
   public init(
@@ -35,10 +34,9 @@ export class TreeView implements ComponentFramework.StandardControl<IInputs, IOu
         buttonSize: (context.parameters.buttonSize.raw ?? 'medium') as 'small' | 'medium' | 'large',
         treeSize: (context.parameters.treeSize.raw ?? 'medium') as 'small' | 'medium',
         fontSize: context.parameters.fontSize.raw ?? undefined,
-            onSelectionChange: (updatedData: ITreeItem[], selectedKeys: string, selectedState: string, changedRows: string) => {
+            onSelectionChange: (updatedData: ITreeItem[], selectedKeys: string, changedRows: string) => {
               this._treeData = updatedData;
               this._selectedKeys = selectedKeys;
-              this._selectedState = selectedState;
               this._changedRows = changedRows;
               this._notifyOutputChanged();
             }
@@ -50,7 +48,6 @@ export class TreeView implements ComponentFramework.StandardControl<IInputs, IOu
   public getOutputs(): IOutputs {
     return {
       selectedKeys: this._selectedKeys,
-      selectedState: this._selectedState,
       changedRows: this._changedRows,
       // only selectedKeys is returned as an output
     };
