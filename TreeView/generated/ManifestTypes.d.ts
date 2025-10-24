@@ -6,11 +6,10 @@
 export interface IInputs {
     buttonSize: ComponentFramework.PropertyTypes.EnumProperty<"small" | "medium" | "large">;
     treeSize: ComponentFramework.PropertyTypes.EnumProperty<"small" | "medium">;
-    fontSize: ComponentFramework.PropertyTypes.StringProperty;
+    fontSize: ComponentFramework.PropertyTypes.WholeNumberProperty;
     items: ComponentFramework.PropertyTypes.DataSet;
 }
 export interface IOutputs {
-    buttonSize?: string;
-    treeSize?: string;
-    fontSize?: string;
+    selectedKeys?: string;
+    selectedState?: string;
 }

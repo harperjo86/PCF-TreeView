@@ -1,23 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <manifest>
-  <control namespace="PowerApps.PCF.Controls" constructor="TreeView" version="0.0.1" display-name-key="TreeView" description-key="TreeView description" control-type="virtual" api-version="1.3.18">
-    <external-service-usage enabled="false"/>
-    <data-set name="items" display-name-key="Dataset_items">
-      <property-set name="itemKey" display-name-key="itemKey" description-key="" of-type="SingleLine.Text" usage="bound" required="true"/>
-      <property-set name="itemLabel" display-name-key="itemLabel" description-key="" of-type="SingleLine.Text" usage="bound" required="true"/>
-      <property-set name="itemParentKey" display-name-key="itemParentKey" description-key="" of-type="SingleLine.Text" usage="bound" required="false"/>
-      <property-set name="itemTooltip" display-name-key="itemTooltip" description-key="" of-type="SingleLine.Text" usage="bound" required="false"/>
+  <control namespace="PowerApps.PCF.Controls" constructor="TreeView" version="0.0.1" display-name-key="TreeView" description-key="TreeView description" control-type="react" api-version="1.3.18">
+    <type-group name="treeItems">
+      <type>SingleLine.Text</type>
+      <type>Whole.None</type>
+      <type>TwoOptions</type>
+    </type-group>
+    <data-set name="items" display-name-key="Items">
+      <property-set name="itemKey" display-name-key="Item Key" description-key="" of-type="SingleLine.Text" usage="bound" required="true"/>
+      <property-set name="itemLabel" display-name-key="Item Label" description-key="" of-type="SingleLine.Text" usage="bound" required="true"/>
+      <property-set name="itemParentKey" display-name-key="Item Parent Key" description-key="" of-type="SingleLine.Text" usage="bound" required="false"/>
+      <property-set name="itemTooltip" display-name-key="Item Tooltip" description-key="" of-type="SingleLine.Text" usage="bound" required="false"/>
+      <property-set name="isSelected" display-name-key="Is Selected" description-key="" of-type="TwoOptions" usage="bound" required="false"/>
     </data-set>
-    <property name="buttonSize" display-name-key="buttonSize" description-key="buttonSizeDesc" of-type="Enum" usage="bound" required="true" default-value="small">
+    <property name="buttonSize" display-name-key="Button Size" of-type="Enum" usage="input" required="true" default-value="medium">
       <value name="small" display-name-key="small">small</value>
       <value name="medium" display-name-key="medium">medium</value>
       <value name="large" display-name-key="large">large</value>
     </property>
-    <property name="treeSize" display-name-key="treeSize" description-key="treeSizeDesc" of-type="Enum" usage="bound" required="true" default-value="small">
-      <value name="smallTree" display-name-key="smallTree">small</value>
-      <value name="mediumTree" display-name-key="mediumTree">medium</value>
+    <property name="treeSize" display-name-key="Tree Size" of-type="Enum" usage="input" required="true" default-value="medium">
+      <value name="small" display-name-key="small">small</value>
+      <value name="medium" display-name-key="medium">medium</value>
     </property>
-    <property name="fontSize" display-name-key="fontSize" description-key="fontSizeDesc" of-type="SingleLine.Text" usage="bound" required="false" default-value="14"/>
+    <property name="fontSize" display-name-key="Font Size" of-type="Whole.None" usage="input" required="false"/>
+    <property name="selectedKeys" display-name-key="Selected Keys" of-type="SingleLine.Text" usage="output" required="false"/>
+    <property name="selectedState" display-name-key="Selected State" of-type="SingleLine.Text" usage="output" required="false"/>
     <resources>
       <code path="bundle.js" order="1"/>
       <platform-library name="React" version="16.14.0"/>

@@ -1,6 +1,23 @@
-{
+/*{
     "extends": "./node_modules/pcf-scripts/tsconfig_base.json",
     "compilerOptions": {
         "typeRoots": ["node_modules/@types"],
     }
+}
+    */
+
+{
+  "compilerOptions": {
+    "typeRoots": ["node_modules/@types"],
+    "target": "es6",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "jsx": "react",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["./*"]
+    }
+  },
+  "include": ["./TreeView/**/*"]
 }

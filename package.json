@@ -1,5 +1,6 @@
 {
   "name": "pcf-project",
+  "type": "module",
   "version": "1.0.0",
   "description": "Project containing your PowerApps Component Framework (PCF) control.",
   "scripts": {
@@ -13,25 +14,26 @@
     "refreshTypes": "pcf-scripts refreshTypes"
   },
   "dependencies": {
-    "@fluentui/react-components": "9.46.2",
-    "react": "16.14.0",
-    "react-dom": "16.14.0"
+    "@fluentui/react-components": "^9.46.2",
+    "react-dom": "^16.14.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.25.1",
+    "@eslint/js": "^9.38.0",
     "@microsoft/eslint-plugin-power-apps": "^0.2.51",
     "@types/powerapps-component-framework": "^1.3.16",
     "@types/react": "^16.14.60",
     "@types/react-dom": "^16.9.24",
-    "@typescript-eslint/eslint-plugin": "^8.8.1",
-    "@typescript-eslint/parser": "^8.8.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
     "eslint-plugin-promise": "^7.1.0",
-    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.0",
     "globals": "^15.15.0",
     "pcf-scripts": "^1",
     "pcf-start": "^1",
     "react": "^16.14.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.31.0"
-      }
+  }
 }

@@ -1,41 +1,83 @@
 export interface ITreeItem {
   key: string;
   label: string;
-  parentKey?: string | null;
-  tooltip?: string | null;
+  tooltip?: string;
   children?: ITreeItem[];
+  isSelected?: boolean;
 }
 
-export function getItemsArrayFromDataSet(
-  data: ComponentFramework.PropertyTypes.DataSet
-): ITreeItem[] {
-  const itemMap: Record<string, ITreeItem> = {};
-  const allItems: ITreeItem[] = [];
+export const transformData = (items: any[]): ITreeItem[] => {
+  console.log("Raw items:", JSON.stringify(items, null, 2));
+  const tree: ITreeItem[] = [];
+  const map: { [key: string]: ITreeItem } = {};
 
-  // First, create all items and store in a map
-  Object.values(data.records).forEach((record) => {
-    const keyVal = record.getFormattedValue("itemKey");
-    const labelVal = record.getFormattedValue("itemLabel");
-    const parentKeyVal = record.getFormattedValue("itemParentKey");
-    const tooltipVal = record.getFormattedValue("itemTooltip");
-    const item: ITreeItem = {
-      key: keyVal,
-      label: labelVal,
-      parentKey: parentKeyVal,
-      tooltip: tooltipVal,
-      children: [],
-    };
-    itemMap[item.key] = item;
-    allItems.push(item);
-  });
+  try {
+    // First pass: create nodes and map by key
+    items.forEach((item) => {
+      // support both plain objects and PCF DataSet record objects
+      const get = (field: string) => {
+        if (!item) return undefined;
+        if (typeof item.getValue === "function") {
+          try {
+            return item.getValue(field);
+          } catch {
+            return undefined;
+          }
+        }
+        return item[field];
+      };
 
-  // Then, assign children to their parents
-  allItems.forEach((item) => {
-    if (item.parentKey && itemMap[item.parentKey]) {
-      itemMap[item.parentKey].children!.push(item);
-    }
-  });
+      const rawKey = get("itemKey");
+      const rawLabel = get("itemLabel");
+      if (!rawKey || !rawLabel) {
+        console.error("Invalid item (missing key or label):", item);
+        return;
+      }
 
-  // Return only root items (no parentKey)
-  return allItems.filter((item) => !item.parentKey);
-}
+      const node: ITreeItem = {
+        key: String(rawKey),
+        label: String(rawLabel),
+        tooltip: get("itemTooltip") ? String(get("itemTooltip")) : undefined,
+        isSelected: (() => {
+          const v = get("isSelected");
+          if (v === undefined || v === null) return false;
+          if (typeof v === "boolean") return v;
+          if (typeof v === "object" && "value" in v) return Boolean((v as any).value);
+          return Boolean(v);
+        })(),
+        children: [],
+      };
+      map[node.key] = node;
+      // store parent key on the raw item for second pass
+      (item as any).__parentKey = get("itemParentKey");
+    });
+
+    // Second pass: attach children to parents
+    items.forEach((item) => {
+      const rawKey = typeof item.getValue === "function" ? item.getValue("itemKey") : item.itemKey;
+      if (!rawKey) return;
+      const key = String(rawKey);
+      const node = map[key];
+      if (!node) return;
+      const parentKey = item.__parentKey;
+      if (!parentKey) {
+        tree.push(node);
+      } else {
+        const parent = map[String(parentKey)];
+        if (parent) {
+          parent.children = parent.children || [];
+          parent.children.push(node);
+        } else {
+          console.warn(`Parent not found for key ${parentKey}, placing node at root: ${key}`);
+          tree.push(node);
+        }
+      }
+    });
+
+    console.log("Transformed tree:", JSON.stringify(tree, null, 2));
+    return tree;
+  } catch (error) {
+    console.error("Error in transformData:", error);
+    return [];
+  }
+};
