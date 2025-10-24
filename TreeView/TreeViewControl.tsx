@@ -17,7 +17,7 @@ export interface ITreeViewControlProps {
   buttonSize: "small" | "medium" | "large";
   treeSize: "small" | "medium";
   fontSize?: number;
-  onSelectionChange?: (updatedData: ITreeItem[], selectedKeys: string, selectedState: string) => void;
+  onSelectionChange?: (updatedData: ITreeItem[], selectedKeys: string, selectedState: string, changedRows: string) => void;
 }
 
 const useStyles = makeStyles({
@@ -234,12 +234,33 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
 
   const handleCheckboxChange = (key: string, _checked: boolean): void => {
     try {
+      const previous = treeData;
       const updatedData = updateSelection(key);
       setTreeData(updatedData);
       if (onSelectionChange) {
         const selectedKeys = getSelectedKeys(updatedData);
         const selectedState = getSelectedState(updatedData);
-        onSelectionChange(updatedData, selectedKeys, selectedState);
+        // compute changed rows: nodes where isSelected differs between previous and updated
+        const changed: string[] = [];
+        const collectChanged = (prevNodes: ITreeItem[] | undefined, newNodes: ITreeItem[] | undefined) => {
+          if (!newNodes) return;
+          newNodes.forEach((n) => {
+            const prev = (prevNodes || []).find((p) => p.key === n.key);
+            if (!prev) {
+              // treat as changed
+              changed.push(`${n.key}|${n.isSelected ? 'true' : 'false'}`);
+            } else if ((prev.isSelected ?? false) !== (n.isSelected ?? false)) {
+              changed.push(`${n.key}|${n.isSelected ? 'true' : 'false'}`);
+            }
+            if (n.children && n.children.length > 0) {
+              const prevChildren = prev ? prev.children : undefined;
+              collectChanged(prevChildren, n.children);
+            }
+          });
+        };
+        collectChanged(previous, updatedData);
+        const changedRows = changed.join('\n');
+        onSelectionChange(updatedData, selectedKeys, selectedState, changedRows);
       }
     } catch (error) {
       console.error("Error in handleCheckboxChange:", error);

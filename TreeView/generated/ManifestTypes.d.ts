@@ -12,4 +12,5 @@ export interface IInputs {
 export interface IOutputs {
     selectedKeys?: string;
     selectedState?: string;
+    changedRows?: string;
 }
