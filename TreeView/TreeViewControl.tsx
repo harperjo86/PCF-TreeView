@@ -23,7 +23,7 @@ export interface ITreeViewControlProps {
 const useStyles = makeStyles({
   innerWrapper: {
     alignItems: "start",
-    columnGap: "15px",
+    columnGap: "8px",
     display: "flex",
   },
   OuterWrapper: {
@@ -33,7 +33,7 @@ const useStyles = makeStyles({
     minWidth: "min-content",
   },
   childTree: {
-    marginLeft: "24px",
+    marginLeft: "0px",
   },
   treeContainer: {
     minWidth: "100%",
@@ -46,7 +46,8 @@ const useStyles = makeStyles({
     alignItems: "center",
     whiteSpace: "nowrap",
     width: "100%",
-    padding: "4px 8px",
+    padding: "0",
+    justifyContent: "flex-start",
   },
   nodeText: {
     display: "inline-flex",
@@ -62,6 +63,7 @@ const useStyles = makeStyles({
   },
   radio: {
     marginRight: "8px",
+    marginLeft: "0",
   },
 });
 
@@ -249,12 +251,19 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
     }
   };
 
-  const renderTreeItems = (items: ITreeItem[]): React.ReactNode => {
+  const renderTreeItems = (items: ITreeItem[], level: number = 0): React.ReactNode => {
     return items.map((item, index) => {
       if (!item.key || !item.label) {
         console.error(`Invalid item at index ${index}:`, item);
         return null;
       }
+      // inline style for node content: shift the radio+text block by level*20px
+      const nodeContentStyle: React.CSSProperties = {
+        marginLeft: `${level * 20}px`,
+        display: "inline-flex",
+        alignItems: "center",
+      };
+
       return (
         <TreeItem
           key={item.key}
@@ -268,22 +277,25 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
             className={styles.treeItemLayout}
             style={fontSize ? { fontSize: `${fontSize}px` } : undefined}
           >
-            <input
-              type="radio"
-              className={styles.radio}
-              checked={item.isSelected ?? false}
-              onChange={() => handleCheckboxChange(item.key, false)}
-              aria-label={`Select ${item.key}`}
-            />
-            <span className={styles.nodeText}>
-              <span className={styles.key}>{item.key}</span>
-              <span className={styles.separator}> - </span>
-              <span>{item.label}</span>
+            <span style={nodeContentStyle}>
+              <input
+                type="radio"
+                className={styles.radio}
+                checked={item.isSelected ?? false}
+                onClick={(e) => { e.stopPropagation(); }}
+                onChange={(e) => { e.stopPropagation(); handleCheckboxChange(item.key, false); }}
+                aria-label={`Select ${item.key}`}
+              />
+              <span className={styles.nodeText}>
+                <span className={styles.key}>{item.key}</span>
+                <span className={styles.separator}> - </span>
+                <span>{item.label}</span>
+              </span>
             </span>
           </TreeItemLayout>
           {item.children && item.children.length > 0 ? (
             <Tree className={styles.childTree}>
-              {renderTreeItems(item.children)}
+              {renderTreeItems(item.children, level + 1)}
             </Tree>
           ) : null}
         </TreeItem>

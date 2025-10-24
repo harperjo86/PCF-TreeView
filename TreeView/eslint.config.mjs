@@ -1,45 +1,49 @@
-import eslintjs from "@eslint/js";
-import microsoftPowerApps from "@microsoft/eslint-plugin-power-apps";
-import pluginPromise from "eslint-plugin-promise";
+// C:\myProjects\TreeView\eslint.config.mjs
+import js from "@eslint/js";
+import tsParser from "@typescript-eslint/parser";
+import tsPlugin from "@typescript-eslint/eslint-plugin";
 import reactPlugin from "eslint-plugin-react";
-import globals from "globals";
-import typescriptEslint from "typescript-eslint";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
+import globals from "globals"; // ✅ ADD THIS
 
-/** @type {import('eslint').Linter.Config[]} */
 export default [
+  js.configs.recommended,
   {
-    ignores: ["**/generated"],
-  },
-  eslintjs.configs.recommended,
-  ...typescriptEslint.configs.recommendedTypeChecked,
-  ...typescriptEslint.configs.stylisticTypeChecked,
-  pluginPromise.configs["flat/recommended"],
-  microsoftPowerApps.configs.paCheckerHosted,
-  reactPlugin.configs.flat.recommended,
-  {
-    plugins: {
-      "@microsoft/power-apps": microsoftPowerApps,
-    },
-
+    files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
-      globals: {
-        ...globals.browser,
-        ComponentFramework: true,
-      },
+      parser: tsParser,
       parserOptions: {
-        ecmaVersion: 2020,
+        ecmaVersion: 2021,
         sourceType: "module",
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+        ecmaFeatures: { jsx: true },
+        project: "../tsconfig.json",
+      },
+      globals: {
+        ...globals.browser, // ✅ adds document, window, HTMLDivElement, etc.
+        ...globals.node, // (optional, if you use Node globals too)
+        console: "readonly",
+        ComponentFramework: "readonly",
       },
     },
-
+    plugins: {
+      "@typescript-eslint": tsPlugin,
+      react: reactPlugin,
+      "react-hooks": reactHooksPlugin,
+    },
     rules: {
-      "@typescript-eslint/no-unused-vars": "off",
+      ...tsPlugin.configs.recommended.rules,
+      ...reactPlugin.configs.recommended.rules,
+      ...reactHooksPlugin.configs.recommended.rules,
+      "react/prop-types": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "no-undef": "error",
+      "react/jsx-uses-react": "off",
+      "react/jsx-uses-vars": "error",
     },
     settings: {
       react: {
-        version: "detect",
+        version: "16.14.0",
       },
     },
   },

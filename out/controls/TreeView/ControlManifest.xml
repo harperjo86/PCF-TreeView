@@ -24,7 +24,7 @@
     </property>
     <property name="fontSize" display-name-key="Font Size" of-type="Whole.None" usage="input" required="false"/>
     <property name="selectedKeys" display-name-key="Selected Keys" of-type="SingleLine.Text" usage="output" required="false"/>
-    <property name="selectedState" display-name-key="Selected State" of-type="SingleLine.Text" usage="output" required="false"/>
+    <property name="changedRows" display-name-key="Changed Rows" of-type="SingleLine.Text" usage="output" required="false"/>
     <resources>
       <code path="bundle.js" order="1"/>
       <platform-library name="React" version="16.14.0"/>
