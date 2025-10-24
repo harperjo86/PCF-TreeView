@@ -8,7 +8,7 @@ import {
   TreeItemValue,
   TreeOpenChangeData,
   TreeOpenChangeEvent,
-  Checkbox,
+  // Radio, (use native input radio to guarantee rendering in the harness)
 } from "@fluentui/react-components";
 import { ITreeItem } from "./dataTransform";
 
@@ -60,7 +60,7 @@ const useStyles = makeStyles({
   separator: {
     color: "#666",
   },
-  checkbox: {
+  radio: {
     marginRight: "8px",
   },
 });
@@ -167,69 +167,74 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
     }
   };
 
-  const updateSelection = (key: string, isSelected: boolean): ITreeItem[] => {
-    // New approach:
-    // 1) Deep-clone the tree data
-    // 2) Find the target node and set its isSelected to the provided value, and set the same value for all its descendants
-    // 3) Recompute parent nodes' isSelected as `item.isSelected || any(child.isSelected)` so parents reflect child selections
+  const updateSelection = (key: string): ITreeItem[] => {
+    // New behavior requested:
+    // 1) Toggle the clicked node's isSelected (flip current state)
+    // 2) Clear (set false) all downstream descendants of the clicked node
+    // 3) Toggle each upstream ancestor's isSelected (flip each parent in the path)
     try {
       const cloned: ITreeItem[] = JSON.parse(JSON.stringify(treeData));
 
-      // set target node and all descendants
-      const setTargetAndDescendants = (items: ITreeItem[]): boolean => {
-        let found = false;
+      // find path from root to target; returns array of nodes (references into cloned)
+      const findPath = (items: ITreeItem[], targetKey: string, path: ITreeItem[] = []): ITreeItem[] | null => {
         for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          if (!item.key) continue;
-          if (item.key === key) {
-            // set this node and all descendants to isSelected
-            const markAll = (node: ITreeItem) => {
-              node.isSelected = isSelected;
-              if (node.children && node.children.length > 0) {
-                node.children.forEach((c) => markAll(c));
-              }
-            };
-            markAll(item);
-            found = true;
-            break; // target keys are unique
+          const node = items[i];
+          if (!node.key) continue;
+          const newPath = [...path, node];
+          if (node.key === targetKey) {
+            return newPath;
           }
-          if (item.children && item.children.length > 0) {
-            const childFound = setTargetAndDescendants(item.children);
-            if (childFound) {
-              found = true;
-              break;
-            }
+          if (node.children && node.children.length > 0) {
+            const res = findPath(node.children, targetKey, newPath);
+            if (res) return res;
           }
         }
-        return found;
+        return null;
       };
 
-      setTargetAndDescendants(cloned);
+      const path = findPath(cloned, key);
+      if (!path || path.length === 0) {
+        console.warn("updateSelection: key not found", key);
+        return cloned;
+      }
 
-      // recompute parents: a node isSelected if itself isSelected OR any child isSelected
-      const recomputeParents = (items: ITreeItem[]): ITreeItem[] => {
-        return items.map((item) => {
-          if (item.children && item.children.length > 0) {
-            const children = recomputeParents(item.children);
-            const anyChildSelected = children.some((c) => c.isSelected);
-            return { ...item, children, isSelected: (item.isSelected as boolean) || anyChildSelected };
-          }
-          return item;
+      const target = path[path.length - 1];
+      const current = !!target.isSelected;
+      const newSelected = !current;
+
+      // set target to toggled value
+      target.isSelected = newSelected;
+
+      // clear all descendants of target
+      const clearDescendants = (node: ITreeItem) => {
+        if (!node.children || node.children.length === 0) return;
+        node.children.forEach((c) => {
+          c.isSelected = false;
+          clearDescendants(c);
         });
       };
+      clearDescendants(target);
 
-      const updated = recomputeParents(cloned);
-      console.log("Updated treeData:", JSON.stringify(updated, null, 2));
-      return updated;
+      // when selecting the target, ensure all ancestors are selected
+      // when deselecting the target, leave ancestors unchanged
+      if (newSelected) {
+        for (let a = 0; a < path.length - 1; a++) {
+          const ancestor = path[a];
+          ancestor.isSelected = true;
+        }
+      }
+
+      console.log("Updated treeData:", JSON.stringify(cloned, null, 2));
+      return cloned;
     } catch (error) {
       console.error("Error in updateSelection:", error);
       return treeData;
     }
   };
 
-  const handleCheckboxChange = (key: string, checked: boolean): void => {
+  const handleCheckboxChange = (key: string, _checked: boolean): void => {
     try {
-      const updatedData = updateSelection(key, checked);
+      const updatedData = updateSelection(key);
       setTreeData(updatedData);
       if (onSelectionChange) {
         const selectedKeys = getSelectedKeys(updatedData);
@@ -260,10 +265,11 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
             className={styles.treeItemLayout}
             style={fontSize ? { fontSize: `${fontSize}px` } : undefined}
           >
-            <Checkbox
-              className={styles.checkbox}
+            <input
+              type="radio"
+              className={styles.radio}
               checked={item.isSelected ?? false}
-              onChange={(ev, data) => handleCheckboxChange(item.key, data.checked as boolean)}
+              onChange={() => handleCheckboxChange(item.key, false)}
               aria-label={`Select ${item.key}`}
             />
             <span className={styles.nodeText}>
