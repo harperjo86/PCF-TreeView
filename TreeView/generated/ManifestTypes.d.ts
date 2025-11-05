@@ -7,6 +7,7 @@ export interface IInputs {
     buttonSize: ComponentFramework.PropertyTypes.EnumProperty<"small" | "medium" | "large">;
     treeSize: ComponentFramework.PropertyTypes.EnumProperty<"small" | "medium">;
     fontSize: ComponentFramework.PropertyTypes.WholeNumberProperty;
+    refreshKey: ComponentFramework.PropertyTypes.WholeNumberProperty;
     items: ComponentFramework.PropertyTypes.DataSet;
 }
 export interface IOutputs {

@@ -1,0 +1,2 @@
+C:\myProjects\obj\Debug\myProjects.pcfproj.AssemblyReference.cache
+C:\myProjects\obj\Debug\myProjects.pcfproj.CoreCompileInputs.cache

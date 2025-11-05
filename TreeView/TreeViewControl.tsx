@@ -1,15 +1,4 @@
 import * as React from "react";
-import {
-  Button,
-  makeStyles,
-  Tree,
-  TreeItem,
-  TreeItemLayout,
-  TreeItemValue,
-  TreeOpenChangeData,
-  TreeOpenChangeEvent,
-  // Radio, (use native input radio to guarantee rendering in the harness)
-} from "@fluentui/react-components";
 import { ITreeItem } from "./dataTransform";
 
 export interface ITreeViewControlProps {
@@ -20,52 +9,59 @@ export interface ITreeViewControlProps {
   onSelectionChange?: (updatedData: ITreeItem[], selectedKeys: string, changedRows: string) => void;
 }
 
-const useStyles = makeStyles({
+// Simple inline style objects to avoid external UI libs
+const styles = {
   innerWrapper: {
-    alignItems: "start",
+    alignItems: "start" as const,
     columnGap: "8px",
-    display: "flex",
+    display: "flex" as const,
   },
-  OuterWrapper: {
-    display: "flex",
-    flexDirection: "column",
+  outerWrapper: {
+    display: "flex" as const,
+    flexDirection: "column" as const,
     rowGap: "15px",
     minWidth: "min-content",
   },
-  childTree: {
-    marginLeft: "0px",
-  },
   treeContainer: {
-    minWidth: "100%",
-    width: "max-content",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-  },
-  treeItemLayout: {
-    display: "inline-flex",
-    alignItems: "center",
-    whiteSpace: "nowrap",
+    display: "flex" as const,
+    flexDirection: "column" as const,
+    height: "100%",
     width: "100%",
-    padding: "0",
-    justifyContent: "flex-start",
+    minWidth: 0,
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden" as const,
+  },
+  treeContent: {
+    flex: 1,
+    overflow: "auto" as const,
+    minHeight: 0,
+    minWidth: 0,
+  },
+  itemRow: {
+    display: "inline-flex" as const,
+    alignItems: "center" as const,
+    whiteSpace: "nowrap" as const,
+    width: "100%",
+    padding: 0,
+    justifyContent: "flex-start" as const,
   },
   nodeText: {
-    display: "inline-flex",
-    alignItems: "center",
-    whiteSpace: "nowrap",
+    display: "inline-flex" as const,
+    alignItems: "center" as const,
+    whiteSpace: "nowrap" as const,
     gap: "8px",
   },
-  key: {
-    fontWeight: "bold",
+  key: { fontWeight: "bold" as const },
+  separator: { color: "#666" },
+  radio: { marginRight: "8px", marginLeft: 0 },
+  chevron: {
+    cursor: "pointer" as const,
+    display: "inline-block" as const,
+    width: "16px",
+    textAlign: "center" as const,
+    userSelect: "none" as const,
   },
-  separator: {
-    color: "#666",
-  },
-  radio: {
-    marginRight: "8px",
-    marginLeft: "0",
-  },
-});
+};
 
 export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
   data,
@@ -74,8 +70,7 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
   fontSize,
   onSelectionChange,
 }) => {
-  const styles = useStyles();
-  const [openItems, setOpenItems] = React.useState<TreeItemValue[]>([]);
+  const [openItems, setOpenItems] = React.useState<string[]>([]);
   const [treeData, setTreeData] = React.useState<ITreeItem[]>(data);
 
   React.useEffect(() => {
@@ -111,7 +106,7 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
   const handleExpandAll = (): void => {
     const collectKeys = (
       items: ITreeItem[],
-      allKeysCollected: TreeItemValue[]
+      allKeysCollected: string[]
     ) => {
       items.forEach((item) => {
         if (!item.key) {
@@ -125,7 +120,7 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
       });
     };
     try {
-      const allKeys: TreeItemValue[] = [];
+      const allKeys: string[] = [];
       collectKeys(treeData, allKeys);
       setOpenItems(allKeys);
     } catch (error) {
@@ -137,26 +132,22 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
     setOpenItems([]);
   };
 
-  const handleOpenChange = (
-    event: TreeOpenChangeEvent,
-    eventData: TreeOpenChangeData
-  ): void => {
+  const toggleOpen = (key: string): void => {
     try {
       setOpenItems((curr) =>
-        eventData.open
-          ? [...curr, eventData.value]
-          : curr.filter((item) => item !== eventData.value)
+        curr.includes(key) ? curr.filter((k) => k !== key) : [...curr, key]
       );
     } catch (error) {
-      console.error("Error in handleOpenChange:", error);
+      console.error("Error in toggleOpen:", error);
     }
   };
 
   const updateSelection = (key: string): ITreeItem[] => {
-    // New behavior requested:
+    // Selection behavior:
     // 1) Toggle the clicked node's isSelected (flip current state)
     // 2) Clear (set false) all downstream descendants of the clicked node
-    // 3) Toggle each upstream ancestor's isSelected (flip each parent in the path)
+    // 3) When selecting: ensure all ancestors are selected
+    // 4) When deselecting: update ancestors based on whether they have other selected children
     try {
       const cloned: ITreeItem[] = JSON.parse(JSON.stringify(treeData));
 
@@ -177,6 +168,12 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
         return null;
       };
 
+      // check if a node has any selected children (recursive)
+      const hasSelectedChildren = (node: ITreeItem): boolean => {
+        if (!node.children || node.children.length === 0) return false;
+        return node.children.some((c) => c.isSelected || hasSelectedChildren(c));
+      };
+
       const path = findPath(cloned, key);
       if (!path || path.length === 0) {
         console.warn("updateSelection: key not found", key);
@@ -190,7 +187,7 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
       // set target to toggled value
       target.isSelected = newSelected;
 
-      // clear all descendants of target
+      // clear all descendants of target (always clear when toggling)
       const clearDescendants = (node: ITreeItem) => {
         if (!node.children || node.children.length === 0) return;
         node.children.forEach((c) => {
@@ -200,9 +197,9 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
       };
       clearDescendants(target);
 
-      // when selecting the target, ensure all ancestors are selected
-      // when deselecting the target, leave ancestors unchanged
+      // update ancestors
       if (newSelected) {
+        // when selecting: ensure all ancestors are selected
         for (let a = 0; a < path.length - 1; a++) {
           const ancestor = path[a];
           ancestor.isSelected = true;
@@ -264,67 +261,63 @@ export const TreeViewControl: React.FC<ITreeViewControlProps> = ({
         alignItems: "center",
       };
 
+      const hasChildren = !!(item.children && item.children.length > 0);
+      const isOpen = hasChildren ? openItems.includes(item.key) : false;
+
       return (
-        <TreeItem
-          key={item.key}
-          value={item.key}
-          as="div"
-          aria-label={`${item.key} - ${item.label}`}
-          itemType={item.children && item.children.length > 0 ? "branch" : "leaf"}
-        >
-          <TreeItemLayout
+        <div key={item.key} role="treeitem" aria-expanded={hasChildren ? isOpen : undefined}>
+          <div
             title={item.tooltip ?? `${item.key} - ${item.label}`}
-            className={styles.treeItemLayout}
-            style={fontSize ? { fontSize: `${fontSize}px` } : undefined}
+            style={{ ...styles.itemRow, ...(fontSize ? { fontSize: `${fontSize}px` } : {}) }}
           >
             <span style={nodeContentStyle}>
+              {hasChildren ? (
+                <span
+                  style={styles.chevron}
+                  onClick={(e) => { e.stopPropagation(); toggleOpen(item.key); }}
+                  aria-label={isOpen ? "Collapse" : "Expand"}
+                >
+                  {isOpen ? "▾" : "▸"}
+                </span>
+              ) : (
+                <span style={{ ...styles.chevron, opacity: 0.4 }}>•</span>
+              )}
               <input
-                type="radio"
-                className={styles.radio}
+                type="checkbox"
+                style={styles.radio as React.CSSProperties}
                 checked={item.isSelected ?? false}
                 onClick={(e) => { e.stopPropagation(); }}
-                onChange={(e) => { e.stopPropagation(); handleCheckboxChange(item.key, false); }}
-                aria-label={`Select ${item.key}`}
+                onChange={(e) => { e.stopPropagation(); handleCheckboxChange(item.key, (e.target as HTMLInputElement).checked); }}
+                aria-label={`Toggle ${item.key}`}
               />
-              <span className={styles.nodeText}>
-                <span className={styles.key}>{item.key}</span>
-                <span className={styles.separator}> - </span>
+              <span style={styles.nodeText as React.CSSProperties}>
+                <span style={styles.key as React.CSSProperties}>{item.key}</span>
+                <span style={styles.separator as React.CSSProperties}> - </span>
                 <span>{item.label}</span>
               </span>
             </span>
-          </TreeItemLayout>
-          {item.children && item.children.length > 0 ? (
-            <Tree className={styles.childTree}>
-              {renderTreeItems(item.children, level + 1)}
-            </Tree>
+          </div>
+          {hasChildren && isOpen ? (
+            <div role="group">
+              {renderTreeItems(item.children!, level + 1)}
+            </div>
           ) : null}
-        </TreeItem>
+        </div>
       );
     });
   };
 
   return (
-    <div className={styles.treeContainer}>
-      <div className={styles.OuterWrapper}>
-        <div className={styles.innerWrapper}>
-          <Button size={buttonSize} onClick={handleExpandAll}>
-            Expand all
-          </Button>
-          <Button size={buttonSize} onClick={handleCollapseAll}>
-            Collapse all
-          </Button>
+    <div style={styles.treeContainer}>
+      <div style={styles.outerWrapper}>
+        <div style={styles.innerWrapper}>
+          <button onClick={handleExpandAll}>Expand all</button>
+          <button onClick={handleCollapseAll} style={{ marginLeft: 8 }}>Collapse all</button>
         </div>
       </div>
-      <Tree
-        size={treeSize}
-        aria-label="Default"
-        appearance="subtle"
-        openItems={openItems}
-        onOpenChange={handleOpenChange}
-        className={styles.treeContainer}
-      >
+      <div role="tree" aria-label="TreeView" style={styles.treeContent as React.CSSProperties}>
         {renderTreeItems(treeData)}
-      </Tree>
+      </div>
     </div>
   );
 };

@@ -4,6 +4,7 @@ export interface ITreeItem {
   tooltip?: string;
   children?: ITreeItem[];
   isSelected?: boolean;
+  sortIndex?: number;
 }
 
 export const transformData = (items: any[]): ITreeItem[] => {
@@ -45,6 +46,12 @@ export const transformData = (items: any[]): ITreeItem[] => {
           if (typeof v === "object" && "value" in v) return Boolean((v as any).value);
           return Boolean(v);
         })(),
+        sortIndex: (() => {
+          const s = get("sortIndex");
+          if (s === undefined || s === null) return undefined;
+          const n = Number(s);
+          return Number.isFinite(n) ? n : undefined;
+        })(),
         children: [],
       };
       map[node.key] = node;
@@ -73,6 +80,22 @@ export const transformData = (items: any[]): ITreeItem[] => {
         }
       }
     });
+
+    // Stable sort by sortIndex if provided, applied at each level
+    const sortNodes = (nodes: ITreeItem[]) => {
+      nodes.sort((a, b) => {
+        const ai = typeof a.sortIndex === "number" ? a.sortIndex : undefined;
+        const bi = typeof b.sortIndex === "number" ? b.sortIndex : undefined;
+        if (ai !== undefined && bi !== undefined) return ai - bi;
+        if (ai !== undefined) return -1; // items with sortIndex come first
+        if (bi !== undefined) return 1;
+        return 0; // preserve original order when no indices
+      });
+      nodes.forEach((n) => {
+        if (n.children && n.children.length > 0) sortNodes(n.children);
+      });
+    };
+    sortNodes(tree);
 
     console.log("Transformed tree:", JSON.stringify(tree, null, 2));
     return tree;

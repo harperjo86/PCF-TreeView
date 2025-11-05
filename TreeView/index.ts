@@ -28,6 +28,9 @@ export class TreeView implements ComponentFramework.StandardControl<IInputs, IOu
     this._context = context;
     this._treeData = transformData(Object.values(context.parameters.items.records || {}));
 
+    // Read refreshKey so that changes to it trigger updateView even if dataset is unchanged
+    const refreshKey = context.parameters.refreshKey?.raw ?? 0;
+
     ReactDOM.render(
       React.createElement(TreeViewControl, {
         data: this._treeData,
@@ -40,7 +43,7 @@ export class TreeView implements ComponentFramework.StandardControl<IInputs, IOu
               this._changedRows = changedRows;
               this._notifyOutputChanged();
             }
-      }),
+      }, null /* children */),
       this._container
     );
   }

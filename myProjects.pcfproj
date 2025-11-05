@@ -19,13 +19,10 @@
     <TargetFramework>net462</TargetFramework>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
-  
-  <Control 
-      Namespace="PowerApps.PCF.Controls" 
-      Constructor="TreeView" 
-      Version="0.0.1" 
-      Directory="TreeView" />
 
+  <ItemGroup>
+    <PcfControl Include="TreeView\ControlManifest.Input.xml" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.PowerApps.MSBuild.Pcf" Version="1.*" />
